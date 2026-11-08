@@ -5,7 +5,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 from pathlib import Path
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, unquote, urljoin, urlsplit
 
 from core.adapter import Adapter
 from core.retry import call_with_retry
@@ -47,7 +47,8 @@ def plan(soups: dict[str, "BeautifulSoup"], adapter: Adapter, base_url: str) -> 
 
             abs_url = urljoin(page_url, src)
             if abs_url not in url_to_name:
-                basename = os.path.basename(urlsplit(abs_url).path) or "image"
+                # 디스크에는 디코딩한 이름(179314_책.png), md 링크에는 인코딩한 이름 — 뷰어가 링크를 디코딩해 찾는다
+                basename = unquote(os.path.basename(urlsplit(abs_url).path)) or "image"
                 stem, ext = os.path.splitext(basename)
                 hash8 = hashlib.sha256(abs_url.encode("utf-8")).hexdigest()[:8]
                 name = name_template.format(
@@ -68,7 +69,7 @@ def plan(soups: dict[str, "BeautifulSoup"], adapter: Adapter, base_url: str) -> 
                 used_names.add(candidate)
                 url_to_name[abs_url] = candidate
 
-            img["src"] = f"{adapter['assets.dir']}/{url_to_name[abs_url]}"
+            img["src"] = f"{adapter['assets.dir']}/{quote(url_to_name[abs_url])}"
             for attr in strip_attrs:
                 img.attrs.pop(attr, None)
             index += 1

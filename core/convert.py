@@ -2,6 +2,7 @@ import json
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
+from urllib.parse import unquote
 
 from bs4 import BeautifulSoup
 
@@ -192,7 +193,7 @@ def quality_gate(md: str, soup, adapter: Adapter, ctx: Ctx, *, raw_html: str = "
 
     if out_dir is not None:
         for m in re.finditer(r"\]\((assets/[^)\s]+)\)", md):
-            asset_path = out_dir / m.group(1)
+            asset_path = out_dir / unquote(m.group(1))
             if not asset_path.exists():
                 warnings.append({"kind": "missing_asset", "file": ctx.page_id, "detail": m.group(1)})
 

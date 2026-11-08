@@ -71,3 +71,27 @@ def test_n4_image_name_no_collision():
     plan = assets.plan({"p1": soup1, "p2": soup2}, AA(), base_url="https://example.com")
     assert len(plan.url_to_name) == 2
     assert len(set(plan.url_to_name.values())) == 2
+
+
+def test_n5_percent_encoded_image_name_decoded_on_disk():
+    from bs4 import BeautifulSoup
+    from core import assets
+
+    class AA(dict):
+        def __getitem__(self, key):
+            return {
+                "output.filename_forbidden": r'[\/:*?"<>|]',
+                "output.filename_replacement": "-",
+                "assets.skip_data_uri": True,
+                "assets.strip_attrs": [],
+                "assets.name_template": "{page_id}_{basename}",
+                "assets.dir": "assets",
+            }[key]
+
+    # 한글·공백 이름과 경로 구분자(%2F)가 섞인 URL
+    soup = BeautifulSoup('<img src="https://x.com/i/%EC%B1%85%20%EA%B7%B8%EB%A6%BC.png">'
+                         '<img src="https://x.com/i/a%2Fb.png">', "lxml")
+    soup._c2m_url = "https://x.com/p"
+    plan = assets.plan({"7": soup}, AA(), base_url="https://x.com")
+    assert sorted(plan.url_to_name.values()) == ["7_a-b.png", "7_책 그림.png"]
+    assert [i["src"] for i in soup.find_all("img")] == ["assets/7_%EC%B1%85%20%EA%B7%B8%EB%A6%BC.png", "assets/7_a-b.png"]
