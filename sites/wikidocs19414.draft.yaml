@@ -1,0 +1,24 @@
+# crawl2md 어댑터 초안 — probe 자동 생성. 사람이 검토 후 verified: true 로 바꿀 것.
+site: wikidocs19414
+name: wikidocs19414
+verified: false
+license: "unknown"
+notes: "probe 자동 생성 초안"
+
+entry:
+  root_url: "https://wikidocs.net/book/19414"
+  page_url: "TODO: {id} 템플릿"
+
+toc:
+  strategy: link_pattern
+  selector: 'a[href^="/"]'
+  id_pattern: '^/(\d+)$'
+
+content:
+  selector: '.page-content'
+  paywall_markers:
+    []
+
+output:
+  filename_template: "{order:03d}_{title}.md"
+  path: "./out/{job}"

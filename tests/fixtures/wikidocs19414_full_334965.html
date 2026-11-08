@@ -1,0 +1,2979 @@
+
+
+
+<!DOCTYPE HTML>
+<html lang="ko">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        
+        <meta name="google-site-verification"
+              content="mzkAy71X1qQFWihQN535LoiToXg34MUg9nuor7Og9E8" />
+        <meta name="naver-site-verification"
+              content="a7b53e9ea172d3cefcc05eaba6ebf7180eca08fa" />
+        
+    <meta name="description"
+          content="&gt; ⚠️ **부분 검증**: 이 페이지는 v0.16.0 소스 분석으로 확인했습니다. 에이전트 루프·트랜스포트·프롬프트 조립·캐싱·컨텍스트 압축·세션 영속화(SQLite/FTS5)…">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="위키독스">
+    <meta property="og:title" content="12-1. 내부 구조">
+    <meta property="og:description"
+          content="&gt; ⚠️ **부분 검증**: 이 페이지는 v0.16.0 소스 분석으로 확인했습니다. 에이전트 루프·트랜스포트·프롬프트 조립·캐싱·컨텍스트 압축·세션 영속화(SQLite/FTS5)…">
+    <meta property="og:image"
+          content="https://static.wikidocs.net/images/book/스크린샷_2026-03-25_오전_11.07.07_1774404468_1774566224_1774566267_1774566547_1774566609.jpg">
+    <meta property="og:url"
+          content="https://wikidocs.net/334965">
+
+        <link rel="apple-touch-icon"
+              sizes="180x180"
+              href="https://static.wikidocs.net/static/img/LaunchImage.png">
+        <link rel="manifest"
+              href="https://static.wikidocs.net/static/site.webmanifest?v=1082">
+        <link rel="icon"
+              type="image/x-icon"
+              sizes="16x16 32x32 48x48 64x64 128x128 256x256"
+              href="https://static.wikidocs.net/static/img/favicon.ico?v=2">
+        
+    <link rel="canonical" href="https://wikidocs.net/334965">
+
+        
+<link rel="preload"
+      as="font"
+      type="font/woff2"
+      crossorigin
+      href="https://static.wikidocs.net/static/fonts/pretendard/v1.3.9/PretendardVariable.woff2" />
+<style>
+    @font-face {
+        font-family: "Pretendard Variable";
+        font-weight: 45 920;
+        font-style: normal;
+        font-display: block;
+        src: url("https://static.wikidocs.net/static/fonts/pretendard/v1.3.9/PretendardVariable.woff2") format("woff2-variations");
+    }
+</style>
+
+        <title>
+            
+    12-1. 내부 구조 - Hermes Agent: 성장하는 AI 에이전트 실전 가이드
+
+        </title>
+        <link rel="stylesheet"
+              href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+              integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u"
+              crossorigin="anonymous">
+        <link type="text/css"
+              href="https://static.wikidocs.net/static/book/css/common.min.css?v=1082"
+              rel="stylesheet"
+              media="screen" />
+        
+            <link type="text/css"
+                  id="main-stylesheet"
+                  href="https://static.wikidocs.net/static/book/css/style_stack.min.css?v=1082"
+                  rel="stylesheet"
+                  media="screen" />
+        
+        
+    
+<link type="text/css"
+      href="https://static.wikidocs.net/static/apprise/apprise.min.css"
+      rel="stylesheet" />
+<link type="text/css"
+      href="https://static.wikidocs.net/static/treeview/bootstrap-treeview.min.css"
+      rel="stylesheet" />
+
+    <link type="text/css"
+          id="markdown-stylesheet"
+          href="https://static.wikidocs.net/static/book/css/markdown_stack.min.css?v=1082"
+          rel="stylesheet" />
+    <link rel="stylesheet"
+          id="highlight-stylesheet"
+          href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css">
+
+<link type="text/css"
+      href="https://static.wikidocs.net/static/book/css/copycode.min.css"
+      rel="stylesheet" />
+
+    
+    
+    
+    <style>
+        ins.adsbygoogle[data-ad-status="unfilled"] {
+            display: none !important;
+        }
+
+        .ad-wrapper:has(> ins.adsbygoogle[data-ad-status="unfilled"]),
+        .dynamic-ad:has(> ins.adsbygoogle[data-ad-status="unfilled"]) {
+            display: none !important;
+        }
+
+        .wikidocs-ad-top-block .first-ad,
+        .wikidocs-ad-top-block .second-ad,
+        .wikidocs-ad-top-block .ad-wrapper {
+            height: 280px;
+            min-height: 280px;
+            overflow: hidden;
+        }
+
+        .wikidocs-ad-top-block .first-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]),
+        .wikidocs-ad-top-block .second-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]),
+        .wikidocs-ad-top-block .ad-wrapper:has(ins.adsbygoogle[data-ad-status="unfilled"]) {
+            height: 0;
+            min-height: 0;
+        }
+    </style>
+    <style type="text/css">.page-content h3 {
+  margin: 1.8em 0 0.6em;
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.page-content h3::before {
+  content: '';
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: #4183c4;
+  flex-shrink: 0;
+}
+
+@media (min-width: 769px) {
+
+  .img-caption {
+    font-size: 0.9em;
+    color: #666;
+    text-align: center;
+    margin-top: 4px;
+  }
+
+  .page-toc-content a.active {
+    color: #007bff;
+    font-weight: bold;
+    border-left: 3px solid #007bff;
+    padding-left: 6px;
+  }
+
+  /* TOC 박스 */
+  #page-toc-container {
+    position: sticky;
+    top: 70px;
+
+    float: right;
+    width: 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+
+    margin-left: 20px;
+    padding: 10px;
+
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+
+    z-index: 10;
+  }
+
+  /* 본문 */
+  .page-content {
+    overflow: visible;
+  }
+
+}</style>
+
+        
+    
+
+
+        
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-6N5MJRGLWG"></script>
+            <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-6N5MJRGLWG');
+        /* Google Ads 전환 측정을 다시 사용할 경우 아래 주석을 해제합니다.
+        gtag('config', 'AW-1044074083');
+        gtag('event', 'conversion', {
+            'send_to': 'AW-1044074083/jW6kCMei2KYaEOOc7fED',
+            'value': 1.0,
+            'currency': 'KRW'
+        });
+        */
+            </script>
+        
+    </head>
+    <body data-is-mobile="false"
+          data-is-authenticated="false"
+          data-is-debug="false"
+           data-is-darkmode='false' >
+        
+    <div id="wikidocs-reader-side-ad">
+        
+            <!-- PC -->
+
+    
+        <aside id="asideRight" class="asideRight">
+    <div id="chaseRight" style="margin-top: 40px;">
+        
+            <script async
+                    src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"
+                    crossorigin="anonymous"></script>
+            <!-- 위키독스_데스크탑_본문_300x250 -->
+            <ins class="adsbygoogle"
+                 style="display:inline-block;
+                        width:300px;
+                        height:250px"
+                 data-ad-client="ca-pub-9470517771012578"
+                 data-ad-slot="1227190832"></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        
+    </div>
+</aside>
+
+    
+
+
+        
+    </div>
+
+        
+        
+        <div class="container" style="padding-bottom:50px">
+            
+    <div class="content row tex2jax_ignore wikidocs-reader-layout"
+         style="margin-top:0px">
+        <div class="col-sm-3 wikidocs-reader-toc-column">
+
+<div class="row"
+     id="toc-data"
+     data-book-id="19414"
+     data-toc-folding="N"
+     data-responsive-drawer="true">
+    
+        <button type="button"
+                class="mobile-toc-btn wikidocs-reader-toc-trigger"
+                aria-label="책 목차 열기"
+                aria-controls="wikidocs-reader-book-toc"
+                aria-expanded="false"
+                data-wikidocs-mobile-toc-trigger>
+            <span class="glyphicon glyphicon-list" aria-hidden="true"></span>
+        </button>
+        <div class="wikidocs-reader-toc-backdrop"
+             data-wikidocs-mobile-toc-backdrop></div>
+    
+    <div class="col-sm-3 sidebar"
+         id="wikidocs-reader-book-toc" data-wikidocs-mobile-toc-panel
+         style="padding:0;
+                margin:0;
+                overflow-x: hidden">
+        
+        <div class="toc toc-checker">
+            <div class="row">
+                <div class="col-xs-12" style="padding:0;">
+                    <div class="row clearfix wikidocs-reader-toc-toolbar"
+                         style="margin:0;
+                                padding:0;
+                                border-bottom:solid 1px #ccc">
+                        <div class="pull-left" style="width:50%;">
+                            <input type="text"
+                                   style="margin-left:15px"
+                                   id="kw"
+                                   name="kw"
+                                   class="input-search"
+                                   placeholder="검색어를 입력하세요."
+                                   autocomplete="off">
+                            <ul id="search-results" class="dropdown-menu" aria-labelledby="kw">
+                            </ul>
+                        </div>
+                        <div class="pull-right wikidocs-reader-toc-actions">
+                            
+                                <button class="btn btn-xs btn-default find-btn" style="margin-top:12px;">
+                                    <i class="glyphicon glyphicon-search" title="찾기"></i>
+                                </button>
+                                <button class="btn btn-xs btn-default menu_link menu-toggle"
+                                        style="margin-top:12px">
+                                    <i class="glyphicon glyphicon-menu-hamburger" title="사이드바 토글"></i>
+                                </button>
+                                <a href="/"
+                                   class="btn btn-xs btn-default home-btn"
+                                   style="margin-right:20px;
+                                          margin-top:12px">
+                                    <i class="glyphicon glyphicon-home" title="위키독스"></i>
+                                </a>
+                            
+                            
+                                <button type="button"
+                                        class="btn btn-xs btn-default wikidocs-reader-toc-close"
+                                        aria-label="책 목차 닫기"
+                                        data-wikidocs-mobile-toc-close>
+                                    <i class="glyphicon glyphicon-remove" aria-hidden="true"></i>
+                                </button>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="list-group list-group-toc" style="margin:0;">
+                <a class="list-group-item book-title "
+                   href="/book/19414"
+                   style="margin:0">
+                    <span style="white-space:nowrap;
+                                 overflow:hidden;
+                                 display:block"
+                          title="Hermes Agent: 성장하는 AI 에이전트 실전 가이드">
+                        
+                            <i class="glyphicon glyphicon-book"></i>
+                        
+                        <strong>Hermes Agent: 성장하는 AI 에이전트 실전 가이드</strong>
+                    </span>
+                    
+                </a>
+                <div class="scrollable-content">
+                    
+                        <a href="/334919"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334919"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="01. Hermes Agent 소개">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    01. Hermes Agent 소개
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334920"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334920"
+                           data-parent-id="334919"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="01-1. Hermes Agent란 무엇인가">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    01-1. Hermes Agent란 무엇인가
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334921"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334921"
+                           data-parent-id="334919"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="01-2. 왜 Hermes Agent인가">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    01-2. 왜 Hermes Agent인가
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334922"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334922"
+                           data-parent-id="334919"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="01-3. 다른 AI 에이전트와 비교">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    01-3. 다른 AI 에이전트와 비교
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/352222"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="352222"
+                           data-parent-id="334919"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="01-4. 에이전트의 골디락스 존">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    01-4. 에이전트의 골디락스 존
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334923"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334923"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02. 설치 및 환경 설정">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02. 설치 및 환경 설정
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334924"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334924"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-1. 시스템 요구사항">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-1. 시스템 요구사항
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334925"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334925"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-2. 설치하기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-2. 설치하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/384421"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="384421"
+                           data-parent-id="334925"
+                           data-depth="2"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-2-1. 데스크톱 앱 설치 — 화면 따라 하기">
+                                <span style="padding-left:40px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-2-1. 데스크톱 앱 설치 — 화면 따라 하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/347635"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="347635"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-3. 클라우드 API 연동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-3. 클라우드 API 연동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354756"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354756"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-4. [빠른 시작] 클라우드 모델 연결하기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-4. [빠른 시작] 클라우드 모델 연결하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354757"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354757"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-5. 설정 파일 이해하기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-5. 설정 파일 이해하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354758"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354758"
+                           data-parent-id="334923"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="02-6. 업데이트">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    02-6. 업데이트
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334928"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334928"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03. 첫 번째 대화">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03. 첫 번째 대화
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334929"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334929"
+                           data-parent-id="334928"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03-1. CLI 기본 사용법">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03-1. CLI 기본 사용법
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/335004"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="335004"
+                           data-parent-id="334928"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03-2. 실습: 첫 대화">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03-2. 실습: 첫 대화
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/336230"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="336230"
+                           data-parent-id="334928"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03-3. 모델 라우팅">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03-3. 모델 라우팅
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/336231"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="336231"
+                           data-parent-id="334928"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03-4. 슬래시 명령어">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03-4. 슬래시 명령어
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/336232"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="336232"
+                           data-parent-id="334928"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="03-5. 음성 모드">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    03-5. 음성 모드
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334932"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334932"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="04. 도구(Tools) 시스템">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    04. 도구(Tools) 시스템
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334933"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334933"
+                           data-parent-id="334932"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="04-1. 내장 도구 살펴보기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    04-1. 내장 도구 살펴보기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334934"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334934"
+                           data-parent-id="334932"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="04-2. 터미널 백엔드">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    04-2. 터미널 백엔드
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334935"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334935"
+                           data-parent-id="334932"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="04-3. 실습: 도구를 활용한 작업">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    04-3. 실습: 도구를 활용한 작업
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/352142"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="352142"
+                           data-parent-id="334932"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="04-4. Codex App-Server 런타임">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    04-4. Codex App-Server 런타임
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334936"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334936"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05. Hermes의 기억법">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05. Hermes의 기억법
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/357411"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="357411"
+                           data-parent-id="334936"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-1. 개요">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-1. 개요
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/357412"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="357412"
+                           data-parent-id="334936"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-2. 자체 메모리">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-2. 자체 메모리
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/357413"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="357413"
+                           data-parent-id="334936"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-3. 외부 메모리 백엔드">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-3. 외부 메모리 백엔드
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/361502"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="361502"
+                           data-parent-id="357413"
+                           data-depth="2"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-3-1. Honcho — 변증법적 사용자 모델">
+                                <span style="padding-left:40px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-3-1. Honcho — 변증법적 사용자 모델
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/361503"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="361503"
+                           data-parent-id="357413"
+                           data-depth="2"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-3-2. Mem0 — 간편 설정·사실 추출">
+                                <span style="padding-left:40px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-3-2. Mem0 — 간편 설정·사실 추출
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/375241"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="375241"
+                           data-parent-id="357413"
+                           data-depth="2"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-3-3. Holographic — 로컬·LLM 불필요 팩트 저장소">
+                                <span style="padding-left:40px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-3-3. Holographic — 로컬·LLM 불필요 팩트 저장소
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/384422"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="384422"
+                           data-parent-id="357413"
+                           data-depth="2"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-3-4. Hindsight — 관찰·반성하는 지식 그래프">
+                                <span style="padding-left:40px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-3-4. Hindsight — 관찰·반성하는 지식 그래프
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/357414"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="357414"
+                           data-parent-id="334936"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-4. 세션 검색">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-4. 세션 검색
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/357415"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="357415"
+                           data-parent-id="334936"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="05-5. 컨텍스트 압축">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    05-5. 컨텍스트 압축
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334940"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334940"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="06. 퍼스널리티와 컨텍스트">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    06. 퍼스널리티와 컨텍스트
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334941"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334941"
+                           data-parent-id="334940"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="06-1. SOUL.md로 성격 정의">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    06-1. SOUL.md로 성격 정의
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334942"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334942"
+                           data-parent-id="334940"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="06-2. AGENTS.md로 프로젝트 지침 설정">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    06-2. AGENTS.md로 프로젝트 지침 설정
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334943"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334943"
+                           data-parent-id="334940"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="06-3. 실습: 나만의 에이전트 만들기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    06-3. 실습: 나만의 에이전트 만들기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334944"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334944"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07. 스킬 시스템">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07. 스킬 시스템
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334945"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334945"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-1. 스킬의 구조와 작동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-1. 스킬의 구조와 작동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334946"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334946"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-2. 자동 스킬 생성">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-2. 자동 스킬 생성
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/337076"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="337076"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-3. 번들 스킬 카탈로그">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-3. 번들 스킬 카탈로그
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/337077"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="337077"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-4. Skills Hub 활용">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-4. Skills Hub 활용
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/337078"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="337078"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-5. 실습: 커스텀 스킬 만들기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-5. 실습: 커스텀 스킬 만들기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/347636"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="347636"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-6. 백그라운드 큐레이터(Curator)">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-6. 백그라운드 큐레이터(Curator)
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/379877"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="379877"
+                           data-parent-id="334944"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="07-7. Gmail 연동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    07-7. Gmail 연동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334949"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334949"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="08. MCP 통합">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    08. MCP 통합
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334950"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334950"
+                           data-parent-id="334949"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="08-1. MCP란 무엇인가">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    08-1. MCP란 무엇인가
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/339244"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="339244"
+                           data-parent-id="334949"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="08-2. MCP 클라이언트 설정">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    08-2. MCP 클라이언트 설정
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334952"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334952"
+                           data-parent-id="334949"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="08-3. 실습: MCP로 기능 확장">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    08-3. 실습: MCP로 기능 확장
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/339245"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="339245"
+                           data-parent-id="334949"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="08-4. Hermes를 MCP 서버로 노출하기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    08-4. Hermes를 MCP 서버로 노출하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334953"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334953"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="09. 메시징 게이트웨이">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    09. 메시징 게이트웨이
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334954"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334954"
+                           data-parent-id="334953"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="09-1. 지원 플랫폼 개요">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    09-1. 지원 플랫폼 개요
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334955"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334955"
+                           data-parent-id="334953"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="09-2. 텔레그램 연동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    09-2. 텔레그램 연동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334956"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334956"
+                           data-parent-id="334953"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="09-3. 디스코드 연동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    09-3. 디스코드 연동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354477"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354477"
+                           data-parent-id="334953"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="09-4. Microsoft Teams 연동">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    09-4. Microsoft Teams 연동
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334957"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334957"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="10. 반복·연속 실행">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    10. 반복·연속 실행
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334958"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334958"
+                           data-parent-id="334957"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="10-1. 크론 스케줄링">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    10-1. 크론 스케줄링
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334959"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334959"
+                           data-parent-id="334957"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="10-2. 실습: 자동 리포트 생성">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    10-2. 실습: 자동 리포트 생성
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354403"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354403"
+                           data-parent-id="334957"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="10-3. 운영 사례: 카페 모니터 크론 튜닝">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    10-3. 운영 사례: 카페 모니터 크론 튜닝
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354404"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354404"
+                           data-parent-id="334957"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="10-4. 영속 목표">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    10-4. 영속 목표
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334960"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334960"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11. 보안">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11. 보안
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334961"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334961"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-1. 5계층 보안 모델">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-1. 5계층 보안 모델
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334962"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334962"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-2. 컨테이너 격리">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-2. 컨테이너 격리
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334963"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334963"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-3. 운영 환경 보안 체크리스트">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-3. 운영 환경 보안 체크리스트
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/339240"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="339240"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-4. 명령어 허용 목록(command_allowlist) 관리">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-4. 명령어 허용 목록(command_allowlist) 관리
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/339241"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="339241"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-5. 멀티 에이전트 구성과 격리">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-5. 멀티 에이전트 구성과 격리
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/348165"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="348165"
+                           data-parent-id="334960"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="11-6. 프로파일로 환경 분리 운영하기">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    11-6. 프로파일로 환경 분리 운영하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334964"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334964"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="12. 아키텍처와 고급 기능">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    12. 아키텍처와 고급 기능
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334965"
+                           class="list-group-item toc-item active"
+                           data-wikidocs-reader-link
+                           data-id="334965"
+                           data-parent-id="334964"
+                           data-depth="1"
+                           aria-current="page">
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="12-1. 내부 구조">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    12-1. 내부 구조
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334966"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334966"
+                           data-parent-id="334964"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="12-2. 자기 진화 시스템 (DSPy + GEPA)">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    12-2. 자기 진화 시스템 (DSPy + GEPA)
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354478"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354478"
+                           data-parent-id="334964"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="12-3. Kanban Multi-Agent 협업">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    12-3. Kanban Multi-Agent 협업
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/354759"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="354759"
+                           data-parent-id="334964"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="12-4. hermes proxy — OAuth 프로바이더용 로컬 프록시">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    12-4. hermes proxy — OAuth 프로바이더용 로컬 프록시
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334967"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334967"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="13. 실전 프로젝트">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    13. 실전 프로젝트
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334968"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334968"
+                           data-parent-id="334967"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="13-1. 프로젝트 코드 분석 에이전트">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    13-1. 프로젝트 코드 분석 에이전트
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334969"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334969"
+                           data-parent-id="334967"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="13-2. 일일 뉴스 브리핑 자동화">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    13-2. 일일 뉴스 브리핑 자동화
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334970"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334970"
+                           data-parent-id="334967"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="13-3. 팀 협업 봇 구축">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    13-3. 팀 협업 봇 구축
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/334971"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="334971"
+                           data-parent-id="334967"
+                           data-depth="1"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="13-4. Mac Mini 홈 인텔리전스 허브">
+                                <span style="padding-left:20px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    13-4. Mac Mini 홈 인텔리전스 허브
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/339242"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="339242"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="부록. Claude Code에서 Hermes로 인계하기">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    부록. Claude Code에서 Hermes로 인계하기
+                                </span>
+                            </span>
+                        </a>
+                    
+                        <a href="/335007"
+                           class="list-group-item toc-item "
+                           data-wikidocs-reader-link
+                           data-id="335007"
+                           data-parent-id=""
+                           data-depth="0"
+                           >
+                            <span style="white-space:nowrap;
+                                         overflow:hidden;
+                                         display:block"
+                                  title="부록. 로컬 LLM 가이드">
+                                <span style="padding-left:0px">
+                                    <span class="toc-toggle"></span>
+                                    
+                                    
+                                    부록. 로컬 LLM 가이드
+                                </span>
+                            </span>
+                        </a>
+                    
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="request_mobile" id="request_mobile" value="0" />
+    </div>
+</div>
+</div>
+        <div class="page col-sm-offset-3 col-sm-9 wikidocs-reader-main"
+             id="load_content"
+             style="margin-top:10px"><div data-wikidocs-reader-content
+     data-page-id="334965"
+     data-is-author="false">
+    
+    
+
+
+
+
+
+
+
+
+
+
+<div class="clearfix page-depth">
+    <ol class="breadcrumb pull-left">
+        <li>
+            <small><a href="/book/19414"><i class="glyphicon glyphicon-book"></i> <strong>Hermes Agent: 성장하는 AI 에이…</strong></a></small>
+        </li>
+        
+            <li>
+                <small><a href="/334964" data-wikidocs-reader-link>12. 아키텍처와 고급 기능</a></small>
+            </li>
+        
+            <li>
+                <small><a href="/334965" data-wikidocs-reader-link>12-1. 내부 구조</a></small>
+            </li>
+        
+    </ol>
+    
+        <ol class="breadcrumb pull-right">
+            
+
+            
+
+            <li>
+                <a href="/"><small class="logo"><i class="glyphicon glyphicon-home"></i> 위키독스</small></a>
+            </li>
+        </ol>
+    
+</div>
+
+<div class="page-header-wrapper">
+    <h1 class="page-subject">
+        <span class="page-subject-text">12-1. 내부 구조</span>
+        <span class="page-subject-actions">
+            
+                <a href="#top"
+                   class="btn btn-default btn-sm page-back-to-top"
+                   style="display: none"
+                   title="맨위로"><i class="glyphicon glyphicon-arrow-up"></i></a>
+            
+            <a href="javascript:togglePageToc();"
+               class="btn btn-default btn-sm"
+               title="목차 보기"><i class="glyphicon glyphicon-list"></i></a>
+            
+                
+            
+        </span>
+    </h1>
+    <!-- 스크롤 진행 표시기 -->
+    <div class="scroll-progress-container" id="scrollProgressContainer">
+        <div class="scroll-progress-bar" id="scrollProgressBar"></div>
+    </div>
+    <div id="page-toc-container"
+         class="page-toc-container"
+         style="display: none">
+        <div class="page-toc-content"></div>
+    </div>
+</div>
+<!-- google adsense -->
+
+    <!-- PC -->
+
+    
+        
+            <div class="wikidocs-ad-block wikidocs-ad-top-block" style="margin:30px 0">
+                <div class="clearfix ad-container"
+     style="display: flex;
+            justify-content: flex-start">
+    <div class="first-ad ad-container" style="margin-right: 30px;">
+        
+            <div class="ad-wrapper adv_wikidocs_top">
+                <div class="ad-placeholder">
+                    광고가 출력될 위치입니다.
+                </div>
+                <script async
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"
+                        crossorigin="anonymous"></script>
+                <!-- 페이지상단임시 -->
+                <ins class="adsbygoogle wikidocs-ad"
+                     style="display:inline-block;
+                            width:336px;
+                            height:280px"
+                     data-ad-client="ca-pub-9470517771012578"
+                     data-ad-slot="7169354980"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        
+    </div>
+    <div class="second-ad ad-container">
+        
+            <div class="ad-wrapper adv_wikidocs_top">
+                <div class="ad-placeholder">
+                    광고가 출력될 위치입니다.
+                </div>
+                <script async
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"
+                        crossorigin="anonymous"></script>
+                <!-- 페이지상단임시 -->
+                <ins class="adsbygoogle wikidocs-ad"
+                     style="display:inline-block;
+                            width:336px;
+                            height:280px"
+                     data-ad-client="ca-pub-9470517771012578"
+                     data-ad-slot="7169354980"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        
+    </div>
+</div>
+
+            </div>
+        
+    
+
+<!-- Mobile -->
+
+
+
+<!-- google adsense -->
+<div class="page-content tex2jax_process book-content-font-normal">
+    
+        
+        
+            
+            <blockquote>
+<p>⚠️ <strong>부분 검증</strong>: 이 페이지는 v0.16.0 소스 분석으로 확인했습니다. 에이전트 루프·트랜스포트·프롬프트 조립·캐싱·컨텍스트 압축·세션 영속화(SQLite/FTS5)·서브에이전트·플러그인 훅의 구조와 핵심 상수를 소스와 대조했습니다. 토큰 오버헤드 수치와 콜드 스타트 단축 폭은 부록의 실측·릴리스 노트 기반입니다. v0.14 이후 일부 코드가 모듈로 분리됐고(루프는 <code>agent/conversation_loop.py</code>, 프롬프트 조립은 <code>agent/system_prompt.py</code>), 시스템 프롬프트는 stable·context·volatile 3계층으로 재구성됐습니다. 내부 구조 설명 위주라 별도 실행 테스트는 하지 않았습니다.</p>
+</blockquote>
+<div class="toc">
+<ul>
+<li><a href="#_1">내부 구조 개요</a></li>
+<li><a href="#run_agentpy">에이전트 루프 (run_agent.py)</a><ul>
+<li><a href="#react">ReAct 루프의 실제 구현</a></li>
+<li><a href="#_2">이터레이션 버짓</a></li>
+<li><a href="#_3">도구 실행 모드</a></li>
+<li><a href="#transport-abc-4">Transport ABC와 4개 트랜스포트</a></li>
+</ul>
+</li>
+<li><a href="#_4">매 턴 재전송 구조</a></li>
+<li><a href="#agentprompt_builderpy">프롬프트 조립 (agent/prompt_builder.py)</a><ul>
+<li><a href="#3">시스템 프롬프트 3계층 구조</a></li>
+<li><a href="#vs">캐시된 프롬프트 vs 에페메럴 레이어</a></li>
+<li><a href="#_5">컨텍스트 파일 보안 검사</a></li>
+</ul>
+</li>
+<li><a href="#agentprompt_cachingpy">프롬프트 캐싱 (agent/prompt_caching.py)</a><ul>
+<li><a href="#system_and_3">system_and_3 전략</a></li>
+</ul>
+</li>
+<li><a href="#agentcontext_compressorpy">컨텍스트 압축 (agent/context_compressor.py)</a><ul>
+<li><a href="#_6">트리거 조건</a></li>
+<li><a href="#_7">압축 알고리즘</a></li>
+<li><a href="#_8">압축 후 세션 계보</a></li>
+</ul>
+</li>
+<li><a href="#hermes_statepy">세션 영속화 (hermes_state.py)</a><ul>
+<li><a href="#sqlite">SQLite 기반 상태 저장</a></li>
+<li><a href="#_9">데이터베이스 스키마</a></li>
+<li><a href="#fts5">FTS5 전문 검색</a></li>
+<li><a href="#wal">WAL 모드와 동시성</a></li>
+</ul>
+</li>
+<li><a href="#toolsdelegate_toolpy">서브에이전트 위임 (tools/delegate_tool.py)</a><ul>
+<li><a href="#_10">아키텍처</a></li>
+<li><a href="#_11">실행 모드</a></li>
+<li><a href="#_12">깊이 제한</a></li>
+</ul>
+</li>
+<li><a href="#_13">플러그인 호스트 아키텍처</a></li>
+<li><a href="#_14">성능</a><ul>
+<li><a href="#cold-start">Cold start</a></li>
+<li><a href="#browser_console">browser_console 영속 연결</a></li>
+</ul>
+</li>
+<li><a href="#_15">버전별 변경</a></li>
+<li><a href="#_16">설계 원칙</a></li>
+</ul>
+</div>
+<h3 id="_1">내부 구조 개요</h3>
+<p>Hermes Agent는 모놀리식이 아닌, 느슨하게 결합된 서브시스템들로 구성되어 있습니다. 이 절에서는 소스 코드(<code>run_agent.py</code>, <code>agent/</code> 패키지, <code>hermes_state.py</code>)를 직접 분석하여 핵심 내부 작동을 설명합니다.</p>
+<h3 id="run_agentpy">에이전트 루프 (<code>run_agent.py</code>)</h3>
+<h4 id="react">ReAct 루프의 실제 구현</h4>
+<p><code>AIAgent.run_conversation()</code> 메서드가 에이전트의 핵심 실행 루프입니다. 소스 코드에서 확인한 실제 흐름은 다음과 같습니다.</p>
+<pre><code>run_conversation(user_message)
+  1. 이터레이션 버짓 초기화 (IterationBudget)
+  2. 대화 히스토리 준비, todo 상태 복원
+  3. 시스템 프롬프트 빌드 또는 캐시에서 로드
+  4. 프리플라이트 압축 (필요시)
+  5. while 루프 진입:
+     a. 인터럽트 체크
+     b. 이터레이션 버짓 소비
+     c. API 메시지 조립 (에페메럴 레이어 주입)
+     d. 프롬프트 캐싱 적용
+     e. 고아 도구 페어 정리 (sanitize)
+     f. API 호출 (스트리밍 또는 비스트리밍)
+     g. 도구 호출이 있으면 → 실행 후 루프 계속
+     h. 최종 텍스트면 → 세션 저장, 결과 반환
+</code></pre>
+<h4 id="_2">이터레이션 버짓</h4>
+<p>부모 에이전트와 서브에이전트가 <strong>공유 이터레이션 버짓</strong>을 사용합니다. <code>IterationBudget</code> 클래스가 스레드 안전한 카운터를 제공합니다.</p>
+<pre><code class="language-python"># 소스 코드 (run_agent.py)에서 확인한 구조
+class IterationBudget:
+    def __init__(self, max_total: int):  # 기본값 90
+        self.max_total = max_total
+        self._used = 0
+        self._lock = threading.Lock()
+
+    def consume(self) -&gt; bool:  # 1회 소비, 초과 시 False
+    def refund(self) -&gt; None:   # execute_code 턴은 환불
+</code></pre>
+<p><code>execute_code</code>(프로그래매틱 도구 호출)로 소비된 이터레이션은 <code>refund()</code>로 되돌려집니다. 이는 스크립트 실행이 실제 추론 턴이 아니기 때문입니다.</p>
+<h4 id="_3">도구 실행 모드</h4>
+<p>Hermes는 두 가지 도구 실행 전략을 사용합니다.</p>
+<p><strong>순차 실행</strong>: 단일 도구 호출이거나, 인터랙티브 도구(<code>clarify</code> 등)가 포함된 경우</p>
+<p><strong>병렬 실행</strong>: 여러 도구가 동시에 요청되고, 안전 조건을 만족하는 경우. 소스 코드에서 확인한 안전 판단 로직은 다음과 같습니다.</p>
+<ul>
+<li><code>_NEVER_PARALLEL_TOOLS</code>: <code>clarify</code>처럼 절대 병렬 실행하지 않는 도구</li>
+<li><code>_PARALLEL_SAFE_TOOLS</code>: <code>read_file</code>, <code>web_search</code>, <code>session_search</code> 등 읽기 전용 도구</li>
+<li><code>_PATH_SCOPED_TOOLS</code>: <code>read_file</code>, <code>write_file</code>, <code>patch</code> — 대상 경로가 겹치지 않으면 병렬 허용</li>
+<li>최대 동시 워커 수: 8개 (<code>_MAX_TOOL_WORKERS</code>)</li>
+</ul>
+<h4 id="transport-abc-4">Transport ABC와 4개 트랜스포트</h4>
+<p>API 호출 경로는 v0.11에서 <strong>트랜스포트 추상화</strong>(<code>agent/transports/</code>)로 분리됐습니다. 포맷 변환과 HTTP 실행이 한 클래스에서 책임지는 구조라, 새 프로바이더를 추가할 때 핵심 에이전트 루프를 건드리지 않습니다.</p>
+<table>
+<thead>
+<tr>
+<th>트랜스포트</th>
+<th><code>api_mode</code></th>
+<th>대상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>ChatCompletionsTransport</code></td>
+<td><code>chat_completions</code></td>
+<td>OpenAI 호환 엔드포인트 (OpenRouter, Ollama, DeepSeek 등 16개+ 프로바이더)</td>
+</tr>
+<tr>
+<td><code>ResponsesApiTransport</code></td>
+<td><code>codex_responses</code></td>
+<td>OpenAI Responses API (OpenAI 직접 연결, xAI)</td>
+</tr>
+<tr>
+<td><code>AnthropicTransport</code></td>
+<td><code>anthropic_messages</code></td>
+<td>Anthropic Messages API (네이티브)</td>
+</tr>
+<tr>
+<td><code>BedrockTransport</code></td>
+<td><code>bedrock_converse</code></td>
+<td>AWS Bedrock Converse API (네이티브)</td>
+</tr>
+</tbody>
+</table>
+<p>OpenAI는 Chat Completions API(<code>/v1/chat/completions</code>)와 Responses API(<code>/v1/responses</code>)를 모두 제공합니다. Hermes는 OpenAI에 직접 연결할 때 Responses API를, OpenRouter 같은 호환 프로바이더를 경유할 때는 Chat Completions API를 사용합니다. 트랜스포트 선택은 아래의 자동 판별 로직이 처리합니다.</p>
+<p>트랜스포트 선택은 대부분 자동입니다. <code>base_url</code>의 호스트명을 보고 판별합니다.</p>
+<ul>
+<li><code>api.openai.com</code> → <code>codex_responses</code></li>
+<li><code>api.x.ai</code> → <code>codex_responses</code></li>
+<li>URL 끝이 <code>/anthropic</code> → <code>anthropic_messages</code></li>
+<li>그 외 → <code>chat_completions</code> (기본값)</li>
+</ul>
+<p><code>config.yaml</code>의 <code>model.api_mode</code>로 명시적으로 지정할 수도 있지만, 프로바이더를 바꿀 때 이전 프로바이더의 <code>api_mode</code>가 남아 충돌하지 않도록 자동 무효화 로직이 들어 있습니다.</p>
+<h3 id="_4">매 턴 재전송 구조</h3>
+<p>트랜스포트가 어느 것이든, Hermes가 사용하는 LLM API는 모두 <strong>무상태(stateless)</strong>입니다. 서버는 이전 대화를 기억하지 않으므로, Hermes Agent는 매 API 호출마다 다음을 모두 전송합니다.</p>
+<ol>
+<li><strong>시스템 프롬프트</strong>: 에이전트 정체성, 메모리, 스킬 인덱스, 컨텍스트 파일 등 (아래 프롬프트 조립 참조)</li>
+<li><strong>도구 정의</strong>: 등록된 모든 도구의 이름, 설명, 파라미터 스키마</li>
+<li><strong>대화 이력 전체</strong>: 첫 턴부터 현재까지의 모든 메시지</li>
+</ol>
+<p>소스 코드(<code>run_agent.py</code>)에서 확인하면, <code>run_conversation()</code>의 while 루프 안에서 매 이터레이션마다 <code>messages</code> 리스트 전체를 순회하여 <code>api_messages</code>를 새로 구성하고, 시스템 프롬프트를 맨 앞에 삽입한 뒤 API에 전달합니다.</p>
+<div class="ad-wrapper markdown_tags">
+<script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"></script>
+<!-- markdown_tags -->
+<ins class="adsbygoogle" data-ad-client="ca-pub-9470517771012578" data-ad-format="false" data-ad-slot="4124294444" data-full-width-responsive="false" style="display:inline-block;width:300px;height:250px"></ins>
+<script>
+                        (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+</div>
+<p>이 구조가 <strong>토큰 오버헤드의 근본 원인</strong>입니다. 부록 「로컬 LLM 가이드」에서 실측한 바와 같이, 도구 29개와 스킬 116개가 등록된 상태에서 단순한 질문 하나에도 약 14,000토큰이 소비됩니다. 턴이 쌓일수록 대화 이력도 함께 재전송되므로 토큰 소비는 가속됩니다.</p>
+<p>이 비효율은 Hermes만의 문제가 아니라 무상태 LLM API를 사용하는 모든 에이전트 프레임워크의 공통 특성입니다. Claude API의 프롬프트 캐싱(아래 참조)은 시스템 프롬프트 부분의 실질 비용을 줄여주지만, 로컬 모델(Ollama 등)에서는 캐싱이 적용되지 않으므로 오버헤드가 그대로 컨텍스트 윈도우를 압박합니다.</p>
+<h3 id="agentprompt_builderpy">프롬프트 조립 (<code>agent/prompt_builder.py</code>)</h3>
+<h4 id="3">시스템 프롬프트 3계층 구조</h4>
+<p>v0.16 기준 <code>build_system_prompt_parts()</code>(<code>agent/system_prompt.py</code>)는 프롬프트를 세 계층으로 나눠 조립합니다. 캐시 친화 순서로 잘 변하지 않는 안정 계층을 앞에, 매 세션·턴 변동하는 휘발 계층을 뒤에 둡니다.</p>
+<table>
+<thead>
+<tr>
+<th>계층</th>
+<th>포함 내용</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>stable (불변)</td>
+<td>에이전트 아이덴티티(<code>SOUL.md</code> 우선, 없으면 <code>DEFAULT_AGENT_IDENTITY</code>) → Hermes 도움말 안내 → 작업 완수 가이던스 → 도구 기반 행동 가이던스(memory·session_search·skills 도구 로드 시) → 스킬 인덱스 → 실행 환경 힌트 → 플랫폼 힌트</td>
+</tr>
+<tr>
+<td>context (cwd 의존)</td>
+<td>호출자 제공 시스템 메시지 → 컨텍스트 파일(AGENTS.md, .cursorrules, .hermes.md)</td>
+</tr>
+<tr>
+<td>volatile (변동·캐시 안 됨)</td>
+<td>메모리 스냅숏(MEMORY.md) → 유저 프로필(USER.md) → 외부 메모리 프로바이더 블록 → 타임스탬프·모델 정보</td>
+</tr>
+</tbody>
+</table>
+<p>세 계층의 적층 순서와, 캐시되지 않고 매 호출 때 덧붙는 에페메럴 레이어의 관계를 그림으로 정리하면 다음과 같습니다.</p>
+<pre><code class="language-mermaid">flowchart TB
+    subgraph CACHED["캐시되는 시스템 프롬프트 (세션당 1회 조립 후 세션 내내 불변)"]
+        direction TB
+        S["① stable · 불변\nSOUL.md(정체성) · 도구/스킬 가이던스 · 환경·플랫폼 힌트"]
+        C["② context · cwd 의존\n호출자 시스템 메시지 · AGENTS.md · .cursorrules"]
+        V["③ volatile · 변동\nMEMORY.md · USER.md · 외부 메모리 · 타임스탬프·모델"]
+        S --&gt; C --&gt; V
+    end
+    V -.-&gt;|"API 호출마다 덧붙임"| E["에페메럴 · 캐시·저장 안 됨\npersonality 오버레이 · prefill · 외부 메모리 후속 리콜"]
+</code></pre>
+<p>위쪽 stable에서 아래쪽 volatile로 갈수록 세션 간 변동이 커지며, 이 순서가 그대로 prefix 캐시를 깨지 않는 적층 순서입니다. <code>/personality</code>로 고른 페르소나는 캐시되는 3계층이 아니라 에페메럴 레이어로 들어가므로, SOUL.md(정체성)을 그대로 둔 채 말투·태도만 얹는 형태가 됩니다.</p>
+<h4 id="vs">캐시된 프롬프트 vs 에페메럴 레이어</h4>
+<p>Hermes의 프롬프트 설계에서 가장 중요한 아키텍처 결정은 <strong>캐시되는 부분과 일시적인 부분의 분리</strong>입니다.</p>
+<p><strong>캐시 대상</strong> (세션 DB에 저장, 세션 내내 불변):</p>
+<ul>
+<li>위 stable·context·volatile 세 계층을 합친 시스템 프롬프트 전체(한 덩어리로 캐시)</li>
+</ul>
+<p><strong>에페메럴</strong> (API 호출 시에만 주입, 저장 안 됨):</p>
+<ul>
+<li><code>ephemeral_system_prompt</code> (서브에이전트 태스크 프롬프트 등)</li>
+<li><code>prefill_messages</code> (few-shot 프라이밍)</li>
+<li>Honcho 후속 턴 리콜 (현재 턴 user 메시지에 주입)</li>
+</ul>
+<p>소스 코드에서 명시적으로 확인되는 패턴입니다.</p>
+<pre><code class="language-python"># run_conversation()에서 발췌한 흐름
+if self._cached_system_prompt is None:
+    if stored_prompt:  # 기존 세션이면 DB에서 로드
+        self._cached_system_prompt = stored_prompt
+    else:              # 새 세션이면 빌드
+        self._cached_system_prompt = self._build_system_prompt(system_message)
+
+# API 호출 시에만 에페메럴 추가
+effective_system = active_system_prompt
+if self.ephemeral_system_prompt:
+    effective_system = effective_system + "\n\n" + self.ephemeral_system_prompt
+</code></pre>
+<p>이 분리의 목적은 <strong>Anthropic 프롬프트 캐싱의 히트율을 극대화</strong>하는 것입니다. 시스템 프롬프트가 매 턴 변하면 캐시가 무효화되어 비용이 크게 증가합니다.</p>
+<h4 id="_5">컨텍스트 파일 보안 검사</h4>
+<p><code>prompt_builder.py</code>는 AGENTS.md, .cursorrules 등 외부 컨텍스트 파일을 주입하기 전에 <strong>프롬프트 인젝션 스캔</strong>을 수행합니다. 소스 코드에서 확인한 탐지 패턴의 예시입니다.</p>
+<ul>
+<li><code>ignore previous instructions</code> 같은 프롬프트 인젝션 패턴</li>
+<li>숨겨진 HTML (<code>display:none</code>)</li>
+<li>비가시 유니코드 문자 (zero-width space 등)</li>
+<li><code>curl</code>을 통한 시크릿 유출 시도</li>
+<li><code>.env</code>, <code>.netrc</code> 등 민감 파일 읽기 시도</li>
+</ul>
+<p>탐지되면 해당 파일 내용이 차단되고 <code>[BLOCKED: ...]</code> 메시지로 대체됩니다.</p>
+<h3 id="agentprompt_cachingpy">프롬프트 캐싱 (<code>agent/prompt_caching.py</code>)</h3>
+<h4 id="system_and_3">system_and_3 전략</h4>
+<p>소스 코드에서 확인한 캐싱 전략입니다. Anthropic의 <code>cache_control</code> 마커를 최대 4개 배치합니다.</p>
+<table>
+<thead>
+<tr>
+<th>브레이크포인트</th>
+<th>대상</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>1</td>
+<td>시스템 프롬프트</td>
+</tr>
+<tr>
+<td>2~4</td>
+<td>마지막 3개 비시스템 메시지 (롤링 윈도우)</td>
+</tr>
+</tbody>
+</table>
+<pre><code class="language-python"># prompt_caching.py에서 확인한 구조
+marker = {"type": "ephemeral"}  # 기본 TTL: 5분
+if cache_ttl == "1h":
+    marker["ttl"] = "1h"
+</code></pre>
+<p>이 전략은 Anthropic 공식 문서의 브레이크포인트 상한(4개)을 정확히 활용합니다. 시스템 프롬프트에 1개, 나머지 3개를 최근 메시지에 배치하여 프리픽스 캐시 히트를 극대화합니다.</p>
+<div class="ad-wrapper markdown_tags">
+<script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"></script>
+<!-- markdown_tags -->
+<ins class="adsbygoogle" data-ad-client="ca-pub-9470517771012578" data-ad-format="false" data-ad-slot="4124294444" data-full-width-responsive="false" style="display:inline-block;width:300px;height:250px"></ins>
+<script>
+                        (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+</div>
+<fieldset><legend>OpenRouter 경유 시에도 캐싱 자동 적용</legend><p style="margin-top: 0.2em;">OpenRouter를 통해 Claude 모델을 사용할 때도 이 캐싱이 자동 적용됩니다. 모델 이름에 "claude"가 포함되어 있으면 <code>_use_prompt_caching</code>이 활성화됩니다.</p></fieldset>
+<h3 id="agentcontext_compressorpy">컨텍스트 압축 (<code>agent/context_compressor.py</code>)</h3>
+<h4 id="_6">트리거 조건</h4>
+<p>압축은 두 시점에서 발생할 수 있습니다.</p>
+<ol>
+<li><strong>프리플라이트 압축</strong>: <code>run_conversation()</code> 진입 시, 기존 대화 히스토리가 이미 임계값을 초과하는 경우 (예: 더 작은 컨텍스트 윈도우 모델로 전환 시)</li>
+<li><strong>인라인 압축</strong>: API 응답의 실제 토큰 카운트가 임계값을 초과하는 경우</li>
+</ol>
+<p>임계값은 기본적으로 <strong>모델 컨텍스트 길이의 50%</strong>입니다.</p>
+<pre><code class="language-python"># context_compressor.py에서 확인
+threshold_percent = 0.50  # 기본값
+protect_first_n = 3       # 보호할 앞부분 턴 수
+protect_last_n = 20       # 보호할 뒷부분 턴 수
+summary_target_ratio = 0.20   # 요약 목표 비율 (임계 토큰 대비)
+</code></pre>
+<h4 id="_7">압축 알고리즘</h4>
+<p>소스 코드에서 확인한 압축 절차입니다.</p>
+<ol>
+<li>앞의 3턴과 뒤의 20턴을 <strong>보호 영역</strong>으로 지정합니다</li>
+<li>보호 영역 사이의 <strong>중간 턴</strong>들을 요약 대상으로 선택합니다</li>
+<li>경계 조정: 도구 호출/결과 쌍이 분리되지 않도록 경계를 앞뒤로 밀어냅니다</li>
+<li>보조 LLM(<code>call_llm</code>의 <code>compression</code> 태스크)으로 중간 턴을 요약합니다</li>
+<li>요약을 <code>[CONTEXT COMPACTION]</code> 프리픽스와 함께 단일 메시지로 삽입합니다</li>
+<li><strong>고아 도구 페어 정리</strong>: 요약으로 잘린 tool_call/tool_result 쌍을 수복합니다</li>
+</ol>
+<p>고아 페어 정리는 두 가지 경우를 처리합니다.</p>
+<ul>
+<li><strong>고아 결과</strong>: tool_call이 요약에 포함되어 사라졌는데 result만 남은 경우 → 해당 result 삭제</li>
+<li><strong>고아 호출</strong>: tool_call은 남았는데 result가 요약에 포함되어 사라진 경우 → 스텁 result 삽입</li>
+</ul>
+<h4 id="_8">압축 후 세션 계보</h4>
+<p>압축이 발생하면 <strong>새 세션 ID</strong>로 분할될 수 있으며, <code>parent_session_id</code>로 원래 세션과의 계보가 유지됩니다. 이로써 검색 시 세션 가족 단위로 추적할 수 있습니다.</p>
+<h3 id="hermes_statepy">세션 영속화 (<code>hermes_state.py</code>)</h3>
+<h4 id="sqlite">SQLite 기반 상태 저장</h4>
+<p>소스 코드에서 확인한 저장소는 <strong>SQLite</strong> (<code>~/.hermes/state.db</code>)이며, JSONL이 아닙니다.</p>
+<fieldset><legend>SQLite가 주 저장소, JSONL은 레거시</legend><p style="margin-top: 0.2em;">공식 문서에도 "some legacy JSON/JSONL artifacts still exist for compatibility, but SQLite is the main historical store"라고 명시되어 있습니다. 즉 SQLite가 주 저장소이고, 레거시 JSONL은 호환용으로만 남아 있습니다.</p></fieldset>
+<h4 id="_9">데이터베이스 스키마</h4>
+<p>소스 코드에서 확인한 핵심 테이블 구조입니다 (스키마 버전 14).</p>
+<p><strong>sessions 테이블:</strong></p>
+<ul>
+<li><code>id</code>: 세션 고유 ID (TEXT PRIMARY KEY)</li>
+<li><code>source</code>: 플랫폼 (cli, telegram, discord 등)</li>
+<li><code>parent_session_id</code>: 압축 분할 시 부모 세션 참조</li>
+<li><code>model</code>, <code>system_prompt</code>: 사용 모델 및 시스템 프롬프트 스냅숏</li>
+<li><code>title</code>: 세션 제목 (고유, 100자 제한)</li>
+<li>토큰 카운트: <code>input_tokens</code>, <code>output_tokens</code>, <code>cache_read_tokens</code>, <code>cache_write_tokens</code>, <code>reasoning_tokens</code></li>
+<li>비용 추적: <code>estimated_cost_usd</code>, <code>actual_cost_usd</code>, <code>billing_provider</code></li>
+</ul>
+<p><strong>messages 테이블:</strong></p>
+<ul>
+<li><code>session_id</code>, <code>role</code>, <code>content</code>, <code>tool_call_id</code>, <code>tool_calls</code>, <code>tool_name</code>, <code>timestamp</code></li>
+</ul>
+<h4 id="fts5">FTS5 전문 검색</h4>
+<p><code>messages_fts</code>라는 FTS5 가상 테이블이 메시지 내용의 전문 검색을 제공합니다. 트리거로 메시지 삽입/삭제/수정 시 자동 동기화됩니다. <code>session_search</code> 도구가 이 인덱스를 사용합니다.</p>
+<div class="ad-wrapper markdown_tags">
+<script async="" crossorigin="anonymous" src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"></script>
+<!-- markdown_tags -->
+<ins class="adsbygoogle" data-ad-client="ca-pub-9470517771012578" data-ad-format="false" data-ad-slot="4124294444" data-full-width-responsive="false" style="display:inline-block;width:300px;height:250px"></ins>
+<script>
+                        (adsbygoogle = window.adsbygoogle || []).push({});
+                    </script>
+</div>
+<p>검색 문법은 FTS5 표준을 따릅니다. 키워드, <code>"정확한 구문"</code>, <code>OR</code>/<code>NOT</code> 불리언, <code>접두사*</code> 등이 지원됩니다. 하이픈이 포함된 용어(예: <code>chat-send</code>)는 자동으로 따옴표로 감싸서 구문 매칭됩니다.</p>
+<h4 id="wal">WAL 모드와 동시성</h4>
+<p>데이터베이스는 <strong>WAL(Write-Ahead Logging) 모드</strong>로 작동합니다. 게이트웨이 환경에서 여러 읽기 스레드와 하나의 쓰기 스레드가 동시에 작동할 수 있게 합니다. 스레드 잠금(<code>threading.Lock</code>)으로 쓰기 작업의 직렬화를 보장합니다.</p>
+<h3 id="toolsdelegate_toolpy">서브에이전트 위임 (<code>tools/delegate_tool.py</code>)</h3>
+<h4 id="_10">아키텍처</h4>
+<p><code>delegate_task</code> 도구는 자식 <code>AIAgent</code> 인스턴스를 생성하여 독립된 컨텍스트에서 작업을 수행합니다.</p>
+<p>자식 에이전트의 특징:</p>
+<ul>
+<li><strong>격리된 대화</strong>: 부모의 히스토리를 상속하지 않습니다</li>
+<li><strong>독립된 터미널 세션</strong>: 별도의 작업 디렉터리와 상태</li>
+<li><strong>제한된 도구셋</strong>: <code>delegate_task</code>, <code>clarify</code>, <code>memory</code>, <code>send_message</code>, <code>execute_code</code>는 차단됩니다</li>
+<li><strong>공유 이터레이션 버짓</strong>: 부모와 동일한 <code>IterationBudget</code> 인스턴스를 사용합니다</li>
+</ul>
+<h4 id="_11">실행 모드</h4>
+<ul>
+<li><strong>단일 태스크</strong>: <code>goal</code>만 제공하면 직접 실행 (스레드 풀 오버헤드 없음)</li>
+<li><strong>배치 (병렬)</strong>: <code>tasks</code> 배열로 최대 3개를 <code>ThreadPoolExecutor</code>로 병렬 실행</li>
+</ul>
+<h4 id="_12">깊이 제한</h4>
+<p>소스 코드에서 확인한 재귀 제한입니다.</p>
+<pre><code class="language-python">MAX_DEPTH = 1          # 기본은 평면: parent(0) -&gt; child(1), grandchild 거부
+MAX_CONCURRENT_CHILDREN = 3
+DEFAULT_MAX_ITERATIONS = 50  # 자식 에이전트 기본 이터레이션
+</code></pre>
+<p>서브에이전트는 기본적으로 다른 서브에이전트를 생성할 수 없습니다(설정 <code>max_spawn_depth</code>를 높이지 않는 한 grandchild는 거부됩니다).</p>
+<h3 id="_13">플러그인 호스트 아키텍처</h3>
+<p>v0.11~v0.12에서 게이트웨이가 <strong>플러그인 호스트</strong>로 정착했습니다. 메시징 플랫폼 어댑터, 옵저버빌리티 플러그인, 컨텍스트 엔진 — 모두 같은 플러그인 슬롯을 통해 코어 외부에서 결합됩니다.</p>
+<p>플러그인이 끼워 넣을 수 있는 주요 훅:</p>
+<table>
+<thead>
+<tr>
+<th>훅</th>
+<th>시점</th>
+<th>용도</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>on_session_start</code> / <code>on_session_finalize</code> / <code>on_session_reset</code></td>
+<td>세션 라이프사이클</td>
+<td>세션별 자원 정리, 외부 트래킹 시스템 동기화</td>
+</tr>
+<tr>
+<td><code>pre_tool_call</code> (veto 가능)</td>
+<td>도구 호출 직전</td>
+<td>도구 호출을 거부하거나 통과</td>
+</tr>
+<tr>
+<td><code>post_tool_call</code> (<code>duration_ms</code> 포함)</td>
+<td>도구 호출 직후</td>
+<td>메트릭, 결과 사후 처리</td>
+</tr>
+<tr>
+<td><code>transform_tool_result</code></td>
+<td>결과를 모델에 돌려주기 직전</td>
+<td>결과 가공·필터링</td>
+</tr>
+<tr>
+<td><code>transform_terminal_output</code></td>
+<td>터미널 출력 직전</td>
+<td>출력 가공·요약</td>
+</tr>
+<tr>
+<td><code>pre_gateway_dispatch</code></td>
+<td>메시지가 게이트웨이로 들어오는 시점</td>
+<td>라우팅·필터링</td>
+</tr>
+<tr>
+<td><code>pre_approval_request</code> / <code>post_approval_response</code></td>
+<td>위험 명령 승인 전후</td>
+<td>외부 감사·SOC 통합</td>
+</tr>
+</tbody>
+</table>
+<p>또한 <strong>컨텍스트 엔진</strong>이 플러그형 슬롯이 됐습니다. <code>hermes plugins</code>로 등록한 사용자 정의 컨텍스트 엔진이 매 턴 모델에 전달할 컨텍스트를 가공할 수 있습니다 — 도메인 특화 인젝션·필터링·요약을 코어 변경 없이 끼워 넣을 수 있습니다.</p>
+<h3 id="_14">성능</h3>
+<p>내부 구조 변경으로 가시 응답 속도가 크게 줄어든 두 항목을 한 곳에 모았습니다. 버전별 변경 시점은 다음 「버전별 변경」 절에서 함께 정리합니다.</p>
+<h4 id="cold-start">Cold start</h4>
+<p>게이트웨이·CLI 진입 시점의 가시 cold start가 누적적으로 줄었습니다. 두 단계 변경이 있습니다.</p>
+<ul>
+<li><strong>모듈 lazy import</strong> — OpenAI·Anthropic·Firecrawl·account_usage 모듈을 시작 시점이 아닌 첫 사용 시점에 로드</li>
+<li><strong>설정·도구 정의 캐시</strong> — <code>load_config()</code>·<code>read_raw_config()</code>을 mtime 기반으로 캐시, <code>get_tool_definitions()</code> 메모이즈, <code>check_fn</code> 결과 TTL 캐시</li>
+<li><strong>정규식 사전 컴파일</strong> — <code>DANGEROUS_PATTERNS</code>·<code>HARDLINE_PATTERNS</code> 정규식을 모듈 로드 시 한 번만 컴파일</li>
+<li><strong>스킬 카탈로그·HTTP 호출 정리</strong> — 스킬 캐시, Feishu lazy 로드, Nous HTTP 호출 제거, 모델 카탈로그 디스크 캐시, doctor 검사 병렬화, <code>chat -q</code>에서 환영 배너 생략</li>
+</ul>
+<p>부가 효과로 <code>hermes -z</code> 일회성 모드의 응답 시작도 같이 빨라지고, <code>hermes tools</code> All-Platforms 화면이 14초에서 1.5초 미만으로 떨어졌습니다.</p>
+<h4 id="browser_console"><code>browser_console</code> 영속 연결</h4>
+<p>브라우저 도구가 페이지를 검사하거나 JavaScript를 실행할 때, 매번 새 DevTools 세션을 띄우는 대신 <strong>하나의 영속 Chrome 연결</strong>을 공유합니다. 호출당 수 초 걸리던 작업이 밀리초 단위로 회신되며, 실제 페이지 조작이 즉각 반응합니다.</p>
+<h3 id="_15">버전별 변경</h3>
+<p>내부 구조와 관련된 변경 시점을 한 곳에 모았습니다. 자세한 내용은 위 본문의 해당 절에서 다룹니다.</p>
+<ul>
+<li><strong>v0.14</strong> — Cold start 추가 단축(~19초). <code>browser_console</code>이 영속 Chrome 연결을 공유하며 ~180× 속도 향상.</li>
+<li><strong>v0.12</strong> — Cold start가 약 57% 줄어듦(모듈 lazy import·설정 캐시·정규식 사전 컴파일). 게이트웨이 플러그인 호스트 정착.</li>
+<li><strong>v0.11</strong> — 트랜스포트 추상화(Transport ABC) 도입으로 4개 트랜스포트가 분리. 게이트웨이가 플러그인 호스트로 발전 시작.</li>
+</ul>
+<h3 id="_16">설계 원칙</h3>
+<p>소스 코드 분석과 공식 개발자 가이드에서 일관되게 확인되는 설계 원칙입니다.</p>
+<ol>
+<li><strong>프롬프트 안정성</strong>: 시스템 프롬프트를 세션 내에서 불변으로 유지하여 캐시 히트율을 극대화합니다</li>
+<li><strong>관찰 가능하고 중단 가능한 도구 실행</strong>: 콜백 시스템(<code>tool_progress_callback</code>, <code>step_callback</code> 등)으로 모든 도구 호출을 추적하고, 사용자가 새 메시지를 보내면 루프를 중단할 수 있습니다</li>
+<li><strong>영속 세션과 계보</strong>: SQLite에 세션과 메시지를 저장하고, 압축 분할 시에도 <code>parent_session_id</code>로 계보를 유지합니다</li>
+<li><strong>통합 에이전트 코어</strong>: CLI, 게이트웨이, 크론, ACP 모든 플랫폼에서 동일한 <code>AIAgent</code> 클래스를 사용합니다</li>
+<li><strong>느슨한 결합</strong>: Honcho, 스킬, 메모리, 컨텍스트 엔진, 메시징 플랫폼 어댑터 등 선택적 서브시스템이 독립적으로 활성화/비활성화됩니다 — 그 부분을 플러그인이 채울 수 있습니다</li>
+</ol>
+        
+    
+</div>
+<div class="muted text-right" style="font-size: 0.9em;margin:10px 0;">
+    
+        마지막 편집일시 : 2026년 6월 26일 2:36 오후
+    
+</div>
+
+<!-- google adsense -->
+
+    <!-- PC -->
+
+    
+        
+            <div class="wikidocs-ad-block" style="margin:30px 0;"><div class="clearfix ad-container"
+     style="display: flex;
+            justify-content: flex-start">
+    <div class="first-ad ad-container" style="margin-right: 30px;">
+        
+            <div class="ad-wrapper">
+                <div class="ad-placeholder">
+                    광고가 출력될 위치입니다.
+                </div>
+                <script async
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"
+                        crossorigin="anonymous"></script>
+                <ins class="adsbygoogle wikidocs-ad"
+                     style="display:inline-block;
+                            width:336px;
+                            height:280px"
+                     data-ad-client="ca-pub-9470517771012578"
+                     data-full-width-responsive="false"
+                     data-ad-format="false"
+                     data-ad-slot="6452842464"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        
+    </div>
+    <div class="second-ad ad-container">
+        
+            <div class="ad-wrapper">
+                <div class="ad-placeholder">
+                    광고가 출력될 위치입니다.
+                </div>
+                <script async
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-9470517771012578"
+                        crossorigin="anonymous"></script>
+                <ins class="adsbygoogle wikidocs-ad"
+                     style="display:inline-block;
+                            width:336px;
+                            height:280px"
+                     data-ad-client="ca-pub-9470517771012578"
+                     data-full-width-responsive="false"
+                     data-ad-format="false"
+                     data-ad-slot="6452842464"></ins>
+                <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+            </div>
+        
+    </div>
+</div>
+</div>
+        
+    
+
+<!-- Mobile -->
+
+
+
+<!-- google adsense -->
+<div class="clearfix">
+    <a href="javascript:show_comments();" class="label label-info">댓글 0</a>
+    <a href="#myModal"
+       data-toggle="modal"
+       title="피드백을 남겨주세요"
+       class="label label-info">피드백</a>
+</div>
+<div class="user_comments" style="display:none">
+    <div class="comments" id="page_all_comments">
+
+    
+
+</div>
+    
+        <a href="/loginForm" class="text-info" style="font-size:12px">※ 댓글 작성은 로그인이 필요합니다.</a>
+        <a href="#myModal" data-toggle="modal" style="font-size:12px">(또는 피드백을 이용해 주세요.)</a>
+    
+</div>
+<div class="page-prev-next">
+<div class="clearfix">
+    <div class="pull-left">
+        <ul>
+            
+                <li>
+                    <strong>이전글</strong> : <a class="prev_page_link"
+    href="/334964"
+    data-wikidocs-reader-link>12. 아키텍처와 고급 기능</a>
+                </li>
+            
+            
+                <li>
+                    <strong>다음글</strong> : <a class="next_page_link"
+    href="/334966"
+    data-wikidocs-reader-link>12-2. 자기 진화 시스템 (DSPy + GEPA)</a>
+                </li>
+            
+        </ul>
+    </div>
+</div>
+</div>
+
+</div>
+</div>
+    </div>
+    <div class="btn-group pull-right menu-group wikidocs-reader-menu-group"
+     role="group">
+    <button class="btn btn-xs btn-default menu_link menu-toggle">
+        <i class="glyphicon glyphicon-menu-hamburger" title="사이드바 토글"></i>
+    </button>
+</div>
+<div class="menu-wikidocs"></div>
+
+    <div style="display:none" class="prev_next_indicator">
+
+    <a class="prev_icon"
+       href="/334964"
+       role="button"
+       data-wikidocs-reader-link>
+        <span class="glyphicon glyphicon-chevron-left" style="font-size:2em;"></span>
+    </a>
+
+
+    <a class="next_icon"
+       href="/334966"
+       role="button"
+       data-wikidocs-reader-link>
+        <span class="glyphicon glyphicon-chevron-right" style="font-size:2em;"></span>
+    </a>
+
+
+</div>
+    
+<!-- Modal -->
+<div id="myModal"
+     class="modal fade"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="myModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h3 id="myModalLabel" class="modal-title">이 페이지에 대한 피드백을 남겨주세요</h3>
+            </div>
+            <div class="modal-body">
+                <form class="form" role="form">
+                    <input type="hidden"
+                           name="page_id"
+                           id="feedback-page-id"
+                           value="334965" />
+                    <div class="form-group">
+                        <label class="control-label" for="email">답장받을 이메일 주소</label>
+                        <div class="">
+                            <input class="form-control"
+                                   type="text"
+                                   id="email"
+                                   placeholder="Email"
+                                   >
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="control-label" for="feedback">하고 싶은 말</label>
+                        <div class="controls">
+                            <textarea class="form-control" id="feedback" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <p style="font-size:12px;">※ 피드백은 저자에게 e-메일로 전달됩니다.</p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" data-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="feedback_btn">전송하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+<!-- Modal -->
+<div id="reportModal"
+     class="modal fade"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="reportModalLabel"
+     aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h3 id="reportModalLabel" class="modal-title">댓글을 신고합니다.</h3>
+            </div>
+            <div class="modal-body">
+                <form class="form" role="form">
+                    <input type="hidden" name="comment_id" id="comment_id" />
+                    해당 댓글을 신고하시겠습니까? 댓글 신고는 다음과 같은 경우에 사용해주세요:
+                    <ol>
+                        <li>스팸 또는 광고성 내용이 포함된 경우</li>
+                        <li>욕설, 비방, 개인정보 유출 등 부적절한 내용이 포함된 경우</li>
+                        <li>저작권을 침해하는 내용이 포함된 경우</li>
+                    </ol>
+                    <div class="form-group">
+                        <label class="control-label" for="report">신고 사유를 입력해 주세요.</label>
+                        <div class="controls">
+                            <textarea class="form-control" id="report" rows="5"></textarea>
+                        </div>
+                    </div>
+                    <p style="font-size:12px;">
+                        ※ 신고하신 내용은 관리자에게 전달되며, 확인 후 적절한 조치가 이루어집니다. 신고는 익명으로 처리되며, 신고자의 정보는 공개되지 않습니다.
+                    </p>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-default" data-dismiss="modal">Close</button>
+                <button class="btn btn-primary" id="report_btn">전송하기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+
+
+    
+    <a href="/"
+       class="label label-default wikidocs-home"
+       data-toggle="popover"
+       data-placement="left"
+       data-content="위키독스 홈">
+        <span class="glyphicon glyphicon-home"></span>
+    </a>
+    <a class="label label-default dark_btn toggle-theme"
+       data-toggle="popover"
+       data-placement="left"
+       data-content="다크모드">
+        <span class="glyphicon glyphicon-adjust"></span>
+    </a>
+    <a href="#top"
+       class="label label-default back-to-top"
+       data-toggle="popover"
+       data-placement="left"
+       data-content="맨위로">
+        <span class="glyphicon glyphicon-arrow-up"></span>
+    </a>
+
+<!-- 책갈피 모달 -->
+<div class="modal fade"
+     id="bookmarkModal"
+     tabindex="-1"
+     role="dialog"
+     aria-labelledby="bookmarkModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                <h4 class="modal-title" id="bookmarkModalLabel">책갈피</h4>
+            </div>
+            <div class="modal-body bookmark-body">
+                <!-- 여기에 동적 데이터가 로드됩니다 -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary">추가</button>
+                <button type="button" class="btn btn-default" data-dismiss="modal">닫기</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+        </div>
+        
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+        <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+                integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+                crossorigin="anonymous"></script>
+        <script>
+        const staticFiles = {
+            mainLight: "https://static.wikidocs.net/static/book/css/style_stack.min.css",
+            mainDark: "https://static.wikidocs.net/static/book/css/style_stack_dark.min.css",
+            markdownLight: "https://static.wikidocs.net/static/book/css/markdown_stack.min.css",
+            markdownDark: "https://static.wikidocs.net/static/book/css/markdown_stack_dark.min.css",
+            highlightLight: "//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/default.min.css",
+            highlightDark: "//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/styles/atom-one-dark.min.css"
+        };
+        </script>
+        <script type="text/javascript"
+                src="https://static.wikidocs.net/static/book/js/common.min.js?v=1082"></script>
+        <script type="text/javascript" src="https://static.wikidocs.net/static/book/js/utils.min.js"></script>
+        <script type="text/javascript"
+                src="https://static.wikidocs.net/static/book/js/base.min.js?v=1082"></script>
+        
+    
+
+<script type="text/javascript"
+        src="https://static.wikidocs.net/static/apprise/apprise-1.5.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/11.5.1/highlight.min.js"></script>
+<script src="https://static.wikidocs.net/static/book/js/page_static.min.js?v=20260905_1"></script>
+<script id="MathJax-script"
+        async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script type="text/javascript">document.addEventListener("DOMContentLoaded", function () {
+  const images = document.querySelectorAll("p > img[alt]");
+  images.forEach(img => {
+    const altText = img.getAttribute("alt");
+    if (!altText) return;
+
+    const figure = document.createElement("figure");
+    const caption = document.createElement("figcaption");
+
+    caption.textContent = altText;
+    caption.className = "img-caption";
+
+    const parent = img.parentNode;
+    parent.replaceChild(figure, img);
+    figure.appendChild(img);
+    figure.appendChild(caption);
+  });
+});
+
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+mermaid.initialize({ startOnLoad: false });
+document.addEventListener("DOMContentLoaded", () => {
+  const mermaidBlocks = document.querySelectorAll('pre code.language-mermaid, pre code.mermaid');
+  mermaidBlocks.forEach(block => {
+    const code = block.textContent.trim();
+    const parentPre = block.closest('pre');
+    const mermaidContainer = document.createElement('div');
+    mermaidContainer.classList.add('mermaid');
+    mermaidContainer.textContent = code;
+    parentPre.replaceWith(mermaidContainer);
+  });
+  mermaid.run();
+});</script>
+
+        
+    <script src="https://static.wikidocs.net/static/book/js/toc.min.js?v=1082"></script>
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+        const isDark = document.body.dataset.isDarkmode === 'true';
+        mermaid.initialize({ startOnLoad: false, theme: isDark ? 'dark' : 'default' });
+        let mermaidQueue = Promise.resolve();
+        window.renderWikiDocsMermaid = function(root = document) {
+            root.querySelectorAll('pre code.language-mermaid').forEach((el) => {
+                const pre = el.parentElement;
+                const div = document.createElement('div');
+                div.className = 'mermaid';
+                div.textContent = el.textContent;
+                pre.replaceWith(div);
+            });
+            const nodes = root.querySelectorAll('.mermaid:not([data-processed="true"])');
+            if (!nodes.length) return mermaidQueue;
+            mermaidQueue = mermaidQueue.then(() => mermaid.run({ nodes }));
+            return mermaidQueue;
+        };
+        await window.renderWikiDocsMermaid(document);
+    </script>
+    <script>
+        let wikidocsAdObserver = null;
+        const wikidocsAdScriptPromises = new Map();
+
+        function hideUnfilledAds(root = document) {
+            root.querySelectorAll('ins.adsbygoogle[data-ad-status="unfilled"]').forEach((ad) => {
+                const adWrapper = ad.closest(".dynamic-ad, .ad-wrapper");
+                if (adWrapper) {
+                    adWrapper.style.display = "none";
+                    adWrapper.style.height = "0";
+                    adWrapper.style.minHeight = "0";
+                }
+
+                const slotWrapper = ad.closest(".first-ad, .second-ad");
+                if (slotWrapper) {
+                    slotWrapper.style.display = "none";
+                    slotWrapper.style.height = "0";
+                    slotWrapper.style.minHeight = "0";
+                }
+            });
+
+            root.querySelectorAll(".wikidocs-ad-block").forEach((block) => {
+                const ads = Array.from(block.querySelectorAll("ins.adsbygoogle"));
+                const filledAds = ads.filter((ad) => {
+                    const status = ad.getAttribute("data-ad-status");
+                    return status === "filled" || status === "unfill-optimized";
+                });
+                const pendingAds = ads.filter((ad) => {
+                    return !ad.getAttribute("data-ad-status");
+                });
+                if (ads.length > 0 && filledAds.length === 0 && pendingAds.length === 0) {
+                    block.style.display = "none";
+                }
+            });
+        }
+
+        function loadWikiDocsAdScript(clientId) {
+            if (!clientId || window.adsbygoogle?.loaded) return Promise.resolve();
+            if (wikidocsAdScriptPromises.has(clientId)) {
+                return wikidocsAdScriptPromises.get(clientId);
+            }
+            const scriptUrl = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${encodeURIComponent(clientId)}`;
+            let script = Array.from(document.querySelectorAll("script[src]")).find((candidate) => candidate.src === scriptUrl);
+            const promise = new Promise((resolve) => {
+                if (!script) {
+                    script = document.createElement("script");
+                    script.async = true;
+                    script.src = scriptUrl;
+                    script.crossOrigin = "anonymous";
+                    document.head.appendChild(script);
+                }
+                if (window.adsbygoogle?.loaded) {
+                    resolve();
+                    return;
+                }
+                script.addEventListener("load", resolve, { once: true });
+                script.addEventListener("error", resolve, { once: true });
+                window.setTimeout(resolve, 1500);
+            });
+            wikidocsAdScriptPromises.set(clientId, promise);
+            return promise;
+        }
+
+        window.initWikiDocsAds = function(root = document, registerSlots = false) {
+            const ads = Array.from(root.querySelectorAll("ins.adsbygoogle"));
+            if (!ads.length) return;
+            if (!wikidocsAdObserver) {
+                wikidocsAdObserver = new MutationObserver((mutations) => {
+                    mutations.forEach(() => hideUnfilledAds(document));
+                });
+            }
+            ads.forEach((ad) => {
+                wikidocsAdObserver.observe(ad, {
+                    attributes: true,
+                    attributeFilter: ["data-ad-status"],
+                });
+                if (!registerSlots || ad.dataset.wikidocsAdInitialized === "true" || ad.dataset.adsbygoogleStatus) return;
+                ad.dataset.wikidocsAdInitialized = "true";
+                loadWikiDocsAdScript(ad.dataset.adClient).then(() => {
+                    try {
+                        (window.adsbygoogle = window.adsbygoogle || []).push({});
+                    } catch (error) {
+                        ad.dataset.wikidocsAdInitialized = "false";
+                    }
+                });
+            });
+            hideUnfilledAds(root);
+        };
+
+        document.addEventListener("DOMContentLoaded", () => {
+            window.initWikiDocsAds(document, false);
+        });
+    </script>
+    <script src="https://static.wikidocs.net/static/book/js/page.min.js?v=1082"></script>
+    
+    <script src="https://static.wikidocs.net/static/book/js/reader.min.js?v=1082"></script>
+
+    <script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a37eb2966aab75c0',t:'MTc4ODg3ODMxMw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

@@ -1,0 +1,27 @@
+[project]
+name = "crawl2md"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+  "beautifulsoup4>=4.13",
+  "lxml>=5.0",
+  "markdownify>=1.2,<2",
+  "requests>=2.32",
+  "PyYAML>=6.0",
+  "soupsieve>=2.5",
+]
+
+[project.optional-dependencies]
+browser = ["playwright>=1.47"]
+dev = ["pytest>=8.0", "pytest-cov"]
+
+[project.scripts]
+crawl2md = "cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+py-modules = ["cli"]
+packages = ["core", "core.fetch", "sites.hooks"]

@@ -1,0 +1,89 @@
+site: wikidocs21434
+name: ADsP 데이터분석 준전문가 (위키독스 book/21434)
+verified: true
+license: unknown
+notes: 'probe 실측 verdict=ua_spoof_ok (plain 403, Chrome UA 200). playwright 없이 requests로 받는다.
+
+  '
+entry:
+  root_url: https://wikidocs.net/book/21434
+  page_url: https://wikidocs.net/{id}
+  book_title: null
+  book_title_selector: h1
+  title_suffix_strip: \s*-\s*WikiDocs\s*$
+toc:
+  strategy: link_pattern
+  selector: a[href^="/"]
+  id_pattern: ^/(\d+)$
+  drop_empty_title: true
+  dedupe_by: href
+  order: dom
+  exclude_patterns: []
+content:
+  selector: .page-content
+  remove:
+  - script
+  - ins
+  - style
+  - .ad-wrapper
+  - .adsbygoogle
+  paywall_markers:
+  - 유료 E-?book
+  - E-?book 구매 시에 볼 수 있는
+  - 위키독스 웹 사이트에서는 비공개
+  paywall_threshold: 200
+assets:
+  download: true
+  dir: assets
+  name_template: '{page_id}_{basename}'
+  skip_data_uri: true
+  strip_attrs:
+  - loading
+  - decoding
+  - width
+  - height
+  - style
+  - class
+  concurrency: 8
+  driver: requests
+  timeout_s: 30
+  max_bytes: 20971520
+markdown:
+  heading_style: ATX
+  bullets: '-'
+  escape_asterisks: false
+  escape_underscores: false
+  escape_misc: false
+  code_lang_map: {}
+  code_lang_default: ''
+  math: preserve
+  collapse_blank_lines: 2
+output:
+  filename_template: '{order:03d}_{title}.md'
+  filename_max: 90
+  filename_forbidden: '[\\/:*?"<>|]'
+  filename_replacement: '-'
+  frontmatter:
+  - title
+  - order
+  - source
+  - book
+  h1_from_title: true
+  footer_template: '출처: <{url}> ({license})'
+  index_file: 000_INDEX.md
+  index_wikilink: true
+  target: folder
+  path: ./out/{job}
+fetch:
+  driver: requests
+  concurrency: 5
+  delay_ms: 120
+  timeout_s: 30
+  batch_size: 40
+  block_markers:
+  - Just a moment
+  - cf-chl
+  - Checking your browser
+  - Enable JavaScript and cookies
+  - Attention Required! | Cloudflare
+  user_agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36

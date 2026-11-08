@@ -1,0 +1,96 @@
+# crawl2md 어댑터 — 위키독스 book/19414 "Hermes Agent: 성장하는 AI 에이전트 실전 가이드"
+#
+# 2026-09-08 실측으로 draft(probe 자동 생성)를 사람이 확정한 것이다. probe 제안과
+# 다르게 고친 곳은 아래 두 군데이며, 근거를 각 항목에 남긴다.
+
+site: wikidocs19414
+name: Hermes Agent 실전 가이드 (위키독스 book/19414)
+verified: true
+license: "unknown"            # 루트 페이지에 creativecommons 링크·CC 이미지가 없다.
+                              # (초판 probe는 "저작권 : 120 명이 추천"의 "120"을 집었고,
+                              #  그 오탐은 §6.8에 숫자 필터를 넣어 고쳤다)
+notes: >
+  이 PC에서는 plain requests가 403이지만 Chrome UA를 넣으면 200이다(probe 실측:
+  verdict=ua_spoof_ok). 그래서 book/2155 어댑터와 달리 playwright 없이 requests로 받는다.
+
+entry:
+  root_url: "https://wikidocs.net/book/19414"
+  page_url: "https://wikidocs.net/{id}"
+  book_title: null
+  book_title_selector: "h1"
+  title_suffix_strip: '\s*-\s*WikiDocs\s*$'
+
+toc:
+  strategy: link_pattern
+  selector: 'a[href^="/"]'
+  id_pattern: '^/(\d+)$'
+  drop_empty_title: true      # 목차 끝에 제목 없는 중복 링크가 1개 있다 (92 → 91)
+  dedupe_by: href
+  order: dom
+  exclude_patterns: []
+
+content:
+  selector: ".page-content"   # 현재 probe가 자동으로 고르는 값과 같다(밀도 21.83 최대).
+                              # .content(13,680자/노드 970, 밀도 14.1)는 텍스트가 더 길지만
+                              # 그 차이는 사이드바 목차다. §6.4가 텍스트 길이 기준이던
+                              # 초판에서는 .content 가 뽑혔고, 그래서 규칙을 밀도로 고쳤다.
+  remove:
+    - script
+    - ins
+    - style
+    - ".ad-wrapper"
+    - ".adsbygoogle"
+
+  paywall_markers: []         # 이 책에는 유료·비공개 페이지가 없다.
+                              # probe 후보는 "댓글 작성은 로그인이 필요합니다" 1건뿐이고
+                              # 전 페이지 공통 푸터라 low 로 분류됐다. 넣으면 전체 오탐.
+  paywall_threshold: 200      # 장 표지(예: "13. 실전 프로젝트", 본문 216자) 감지용
+
+assets:
+  download: true
+  dir: assets
+  name_template: "{page_id}_{basename}"
+  skip_data_uri: true
+  strip_attrs: [loading, decoding, width, height, style, class]
+  concurrency: 8
+  driver: requests
+  timeout_s: 30
+  max_bytes: 20971520
+
+markdown:
+  heading_style: ATX
+  bullets: "-"
+  escape_asterisks: false
+  escape_underscores: false
+  escape_misc: false
+  code_lang_map: {}           # census 결과 yaml/bash/python/mermaid 뿐, 오타 없음
+  code_lang_default: ""
+  math: preserve
+  collapse_blank_lines: 2
+
+output:
+  filename_template: "{order:03d}_{title}.md"
+  filename_max: 90
+  filename_forbidden: '[\\/:*?"<>|]'
+  filename_replacement: "-"
+  frontmatter: [title, order, source, book]
+  h1_from_title: true
+  footer_template: "출처: <{url}> ({license})"
+  index_file: "000_INDEX.md"
+  index_wikilink: true
+  target: folder
+  path: "./out/{job}"
+
+fetch:
+  driver: requests            # probe 실측 recommended_driver
+  concurrency: 5
+  delay_ms: 120
+  timeout_s: 30
+  batch_size: 40
+  block_markers:
+    - "Just a moment"
+    - "cf-chl"
+    - "Checking your browser"
+    - "Enable JavaScript and cookies"
+    - "Attention Required! | Cloudflare"
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"

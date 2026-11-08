@@ -1,0 +1,126 @@
+# crawl2md 어댑터 — wikidocs.net
+#
+# 스키마 정의: 구현명세 §4. 여기 있는 모든 키는 그 표에 정의되어 있어야 하고,
+# 정의되지 않은 키가 있으면 adapter.load가 ValidationError로 거부한다.
+#
+# 검증 근거: 2026-09-08 book/2155 실수집 (208페이지, 이미지 454개, 실패 0건).
+# 값을 바꾸기 전에 명세 §16(알려진 함정)을 먼저 읽을 것.
+
+site: wikidocs
+name: 위키독스
+verified: true
+license: "CC BY-NC-SA"        # 책마다 다를 수 있다. probe가 매번 재확인한다
+notes: >
+  Cloudflare 봇 차단이 있어 서버측 요청(requests)은 403 "Just a moment"를 받는다.
+  UA 위조로도 뚫리지 않으므로 playwright가 필수다.
+  다른 책으로 바꿀 때 고칠 곳은 entry.root_url 한 줄뿐이다.
+
+entry:
+  root_url: "https://wikidocs.net/book/2155"
+  page_url: "https://wikidocs.net/{id}"
+  book_title: null                          # null이면 아래 selector → h1 → title 순으로 탐색
+  book_title_selector: "h1"                 # 책 표지 페이지의 제목
+  title_suffix_strip: '\s*-\s*WikiDocs\s*$' # <title> 폴백에서 제거할 꼬리
+
+toc:
+  strategy: link_pattern
+  selector: 'a[href^="/"]'
+  id_pattern: '^/(\d+)$'      # 캡처그룹 정확히 1개. /book/2155 같은 링크는 자동 배제
+  drop_empty_title: true      # 책 표지 링크가 제목 없이 하나 잡힌다 (209 → 208)
+  dedupe_by: href
+  order: dom                  # 제목 정렬 금지.
+                              # "99) ===텐서플로우 1버전 코드 (구버전)===" 이 12장 중간에 있어
+                              # title 정렬 시 순서가 깨진다
+  exclude_patterns: []
+
+content:
+  selector: ".page-content"   # #load_content 는 광고 래퍼를 포함한다.
+                              # 텍스트는 더 길지만(7161 vs 6946) 노드가 많아(239 vs 214)
+                              # 명세 §6.4 규칙에 따라 .page-content 가 정답이다
+  remove:
+    - script
+    - ins
+    - style
+    - ".ad-wrapper"
+    - ".adsbygoogle"
+
+  # 유료·비공개 판정 --------------------------------------------------------
+  # 1순위는 마커 정규식이다. 길이 하한만으로는 절반 이상을 놓친다 —
+  # 18-07은 마크다운 8,010자인데 핵심 내용이 유료로 막혀 있다.
+  paywall_markers:
+    - '유료 E-?book'                  # "유료 E-book에서만 공개합니다"
+                                      # "유료 E-book을 구매하시면"
+    - 'E-?book 구매 시에 볼 수 있는'
+    - '위키독스 웹 사이트에서는 비공개'
+  # 주의: 'E-book' 단독 매칭은 오탐이다. 글쓴이 소개 페이지의 저작권 안내문
+  # "구매하신 E-book 파일을 타인에게 배포해서는 안 됩니다"는 유료 페이지가 아니다.
+
+  paywall_threshold: 200      # 보조 판정. 장 표지(내용 없는 챕터 헤더)를 잡는 용도
+
+assets:
+  download: true
+  dir: assets
+  name_template: "{page_id}_{basename}"   # 페이지 간 동명 이미지 충돌 방지
+  skip_data_uri: true
+  strip_attrs: [loading, decoding, width, height, style, class]
+  concurrency: 8
+  driver: requests            # static.wikidocs.net 은 Cloudflare 없음. plain 200 확인
+  timeout_s: 30
+  max_bytes: 20971520
+
+markdown:
+  heading_style: ATX
+  bullets: "-"
+  escape_asterisks: false     # 이 셋을 켜면 $w_{t}$ 의 언더스코어가 \_ 가 되어
+  escape_underscores: false   # 수식이 통째로 깨진다. 명세 §8.4.1
+  escape_misc: false
+  code_lang_map:
+    pyton: python             # 원본 오타 (language-pyton, 1건)
+    no-highlight: ""          # 언어 태그 없는 펜스로
+  code_lang_default: ""
+  math: preserve              # MathJax 클라이언트 렌더라 LaTeX 원본이 그대로 남는다
+  collapse_blank_lines: 2
+
+output:
+  filename_template: "{order:03d}_{title}.md"   # 접두사가 있어야 탐색기 정렬 = 책 순서
+  filename_max: 90
+  filename_forbidden: '[\\/:*?"<>|]'
+  filename_replacement: "-"
+  frontmatter: [title, order, source, book]
+  h1_from_title: true
+  footer_template: "출처: <{url}> ({license})"
+  index_file: "000_INDEX.md"
+  index_wikilink: true        # 옵시디언 [[파일명|제목]]
+  target: folder
+  path: "./out/{job}"
+
+fetch:
+  driver: playwright          # auto로 두면 requests 실패 후 자동 승격되지만,
+                              # wikidocs는 결과가 확정적이라 한 번 덜 왕복하게 직접 지정
+  concurrency: 5              # 208페이지 실패 0건이 나온 값. 올리지 말 것
+  delay_ms: 120
+  timeout_s: 30
+  batch_size: 40              # 208개를 한 번에 넣으면 page.evaluate 타임아웃
+  block_markers:
+    - "Just a moment"
+    - "cf-chl"
+    - "Checking your browser"
+    - "Enable JavaScript and cookies"
+    - "Attention Required! | Cloudflare"
+  user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36"
+  playwright:
+    channel: chrome           # 번들 크로미움보다 챌린지 통과율이 높다
+    headless: false           # 헤드리스는 더 자주 걸린다
+    persist_profile: true     # 한 번 통과한 clearance를 다음 실행에서 재사용
+    profile_dir: "work/.pwprofile/wikidocs"
+    mode: page_evaluate       # context_request 는 금지. 명세 §11.4
+
+# 이 사이트는 훅 없이 YAML만으로 처리된다 (P5).
+# hooks:
+#   module: sites.hooks.wikidocs
+#   clean_html: strip_notice_boxes
+
+# probe 참고 메모 ---------------------------------------------------------
+# 마크다운 원본 API 없음. /api/v1/page/{id} 는 502, 나머지
+# /api/page/{id}, /{id}.md, /page/{id}/source 는 전부 200을 반환하지만
+# 내용은 동일한 HTML(catch-all 라우트)이다. 상태코드만 보면 속는다. 명세 §6.5
